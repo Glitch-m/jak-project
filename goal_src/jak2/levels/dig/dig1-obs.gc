@@ -360,7 +360,7 @@
 
 
 (defskelgroup skel-dig-bomb-crate-cylinder dig-bomb-crate-cylinder dig-bomb-crate-cylinder-lod0-jg dig-bomb-crate-cylinder-idle-ja
-              ((dig-bomb-crate-cylinder-lod0-mg (meters 300)))
+              ((dig-bomb-crate-cylinder-lod0-mg (meters 999999)))
               :bounds (static-spherem 0 0 0 1.5)
               )
 
@@ -377,10 +377,10 @@
       :inertial-tensor-box (new 'static 'array meters 3 (meters 1) (meters 3) (meters 1))
       )
     :extra (new 'static 'rigid-body-object-extra-info
-      :max-time-step 0.100
+      :max-time-step 0.02
       :gravity (meters 80)
       :idle-distance (meters 200)
-      :attack-force-scale 8.0
+      :attack-force-scale 2.0
       )
     :name '*dig-bomb-crate-cylinder-constants*
     )
@@ -451,7 +451,7 @@
       (ja-no-eval :group! (-> self draw art-group data 3)
                   :num! (seek!
                     (the float (+ (-> (the-as art-joint-anim (-> self draw art-group data 3)) frames num-frames) -1))
-                    0.0
+                    f30-0
                     )
                   :frame-num 0.0
                   )
@@ -471,7 +471,7 @@
       (ja-no-eval :group! (-> self draw art-group data 3)
                   :num! (seek!
                     (the float (+ (-> (the-as art-joint-anim (-> self draw art-group data 3)) frames num-frames) -1))
-                    0.0
+                    f30-0
                     )
                   :frame-num 0.0
                   )
@@ -549,7 +549,7 @@
         (suspend)
         )
       )
-    (dotimes (gp-6 36)
+    (dotimes (gp-6 12)
       (ja-no-eval :group! (-> self draw art-group data 3)
                   :num! (seek!
                     (the float (+ (-> (the-as art-joint-anim (-> self draw art-group data 3)) frames num-frames) -1))
@@ -842,7 +842,7 @@
         )
 
 (defmethod dig-bomb-crate-method-29 dig-bomb-crate ((obj dig-bomb-crate) (arg0 vector))
-  (let ((s4-0 (-> obj root-override trans)))
+  (let ((s4-0 (-> obj root trans)))
     (dotimes (s3-0 8)
       (let ((a0-2 (-> *dig-bomb-crate-array* s3-0))
             (s2-0 (new 'stack-no-clear 'dig-bomb-crate-cylinder-spawn-params))
