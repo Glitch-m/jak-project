@@ -319,7 +319,6 @@ The cpad-set-buzz! function can be used for vibration.
              )
            (when (< (the-as uint 192) (-> pad direct 1))
              (set! (-> pad direct 0) (the-as uint 0))
-             0
              )
            (set! (-> pad button0-abs 2) (-> pad button0-abs 1))
            (set! (-> pad button0-abs 1) (-> pad button0-shadow-abs 0))
@@ -585,6 +584,10 @@ The cpad-set-buzz! function can be used for vibration.
   )
 
 (define *mouse* (new 'global 'mouse-info))
+(#when PC_PORT
+;; added so we can hide the mouse
+(define *disable-mouse* #f)
+)
 
 ;; WARN: Return type mismatch mouse-info vs none.
 (defun service-mouse ()
@@ -619,7 +622,7 @@ The cpad-set-buzz! function can be used for vibration.
        (set! (-> gp-0 button0-rel 0) (logclear (-> gp-0 button0-abs 0) (-> gp-0 button0-abs 1)))
        )
       )
-    (if (and (-> gp-0 active) (-> gp-0 valid) (-> gp-0 cursor))
+    (if (and (-> gp-0 active) (-> gp-0 valid) (-> gp-0 cursor) (#if PC_PORT (not *disable-mouse*) #t))
         (add-debug-cursor
           #t
           (bucket-id debug-no-zbuf2)
