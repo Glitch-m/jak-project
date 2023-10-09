@@ -1,4 +1,4 @@
-#pragma once
+#include "extractor_util.h"
 
 #include <optional>
 #include <regex>
@@ -15,59 +15,112 @@
 #include "third-party/json.hpp"
 #include "third-party/zstd/lib/common/xxhash.h"
 
-enum class ExtractorErrorCode {
-  SUCCESS = 0,
-  INVALID_CLI_INPUT = 3990,
-  VALIDATION_CANT_LOCATE_ELF = 4000,
-  VALIDATION_SERIAL_MISSING_FROM_DB = 4001,
-  VALIDATION_ELF_MISSING_FROM_DB = 4002,
-  VALIDATION_BAD_ISO_CONTENTS = 4010,
-  VALIDATION_INCORRECT_EXTRACTION_COUNT = 4011,
-  VALIDATION_FILE_CONTENTS_UNEXPECTED = 4012,
-  VALIDATION_BAD_EXTRACTION = 4020,
-  DECOMPILATION_GENERIC_ERROR = 4030,
-  EXTRACTION_INVALID_ISO_PATH = 4040,
-  EXTRACTION_ISO_UNEXPECTED_SIZE = 4041,
-  COMPILATION_BAD_PROJECT_PATH = 4050,
-};
-
-enum GameIsoFlags { FLAG_JAK1_BLACK_LABEL = (1 << 0) };
-
-static const std::unordered_map<std::string, GameIsoFlags> sGameIsoFlagNames = {
-    {"jak1-black-label", FLAG_JAK1_BLACK_LABEL}};
-
-static const std::unordered_map<int, std::string> sGameIsoTerritoryMap = {
+const std::unordered_map<int, std::string> game_iso_territory_map = {
     {GAME_TERRITORY_SCEA, "NTSC-U"},
     {GAME_TERRITORY_SCEE, "PAL"},
     {GAME_TERRITORY_SCEI, "NTSC-J"},
     {GAME_TERRITORY_SCEK, "NTSC-K"}};
 
 std::string get_territory_name(int territory) {
-  ASSERT_MSG(sGameIsoTerritoryMap.count(territory),
+  ASSERT_MSG(game_iso_territory_map.count(territory),
              fmt::format("territory {} not found in territory name map"));
-  return sGameIsoTerritoryMap.at(territory);
+  return game_iso_territory_map.at(territory);
 }
 
-// used for - decompiler_out/<jak1> and iso_data/<jak1>
-std::unordered_map<std::string, std::string> data_subfolders = {{"jak1", "jak1"}};
+const ISOMetadata jak1_ntsc_black_label_info = {"Jak & Daxter™: The Precursor Legacy (Black Label)",
+                                                GAME_TERRITORY_SCEA,
+                                                337,
+                                                {11363853835861842434U},
+                                                "ntsc_v1",
+                                                "jak1",
+                                                {"jak1-black-label"}};
 
-struct ISOMetadata {
-  std::string canonical_name;
-  int region;  // territory code
-  int num_files;
-  uint64_t contents_hash;
-  std::string decomp_config_version;
-  std::string game_name;
-  std::vector<std::string> flags;
-};
-
-// This is all we need to re-fetch info from the database
-// - if this changes such that we have a collision in the future,
-//   then the database isn't adequate and everything must change
-struct BuildInfo {
-  std::string serial = "";
-  uint64_t elf_hash = 0;
-};
+// { SERIAL : { ELF_HASH : ISOMetadataDatabase } }
+const std::unordered_map<std::string, std::unordered_map<uint64_t, ISOMetadata>>&
+extractor_iso_database() {
+  static const std::unordered_map<std::string, std::unordered_map<uint64_t, ISOMetadata>> database =
+      {
+          {"SCUS-97124",
+           {{7280758013604870207U, jak1_ntsc_black_label_info},
+            {744661860962747854,
+             {"Jak & Daxter™: The Precursor Legacy",
+              GAME_TERRITORY_SCEA,
+              338,
+              {8538304367812415885U},
+              "ntsc_v2",
+              "jak1",
+              {}}}}},
+          {"SCES-50361",
+           {{12150718117852276522U,
+             {"Jak & Daxter™: The Precursor Legacy",
+              GAME_TERRITORY_SCEE,
+              338,
+              {16850370297611763875U},
+              "pal",
+              "jak1",
+              {}}}}},
+          {"SCPS-15021",
+           {{16909372048085114219U,
+             {"ジャックＸダクスター　～　旧世界の遺産",
+              GAME_TERRITORY_SCEI,
+              338,
+              {1262350561338887717U},
+              "jp",
+              "jak1",
+              {}}}}},
+          {"SCPS-56003",
+           {{7280758013604870207U,
+             {"Jak & Daxter: 구세계의 유산",
+              GAME_TERRITORY_SCEA,
+              338,
+              {13924540661438229398U},
+              "ntsc_v1",
+              "jak1",
+              {}}}}},
+          // Jak 2, NTSC-U v1 and v2.
+          // we put both of them together because they have the same serial and ELF.
+          {"SCUS-97265",             // serial from ELF name
+           {{18445016742498932084U,  // hash of ELF
+             {"Jak II",              // canonical name
+              GAME_TERRITORY_SCEA,
+              593,                                           // number of files
+              {4835330407820245819U, 5223305410190549348U},  // iso hash
+              "ntsc_v1",                                     // decompiler config
+              "jak2",
+              {}}}}},
+          // Jak 2 PAL
+          {"SCES-51608",             // serial from ELF name
+           {{18188891052467821088U,  // hash of ELF
+             {"Jak II: Renegade",    // canonical name
+              GAME_TERRITORY_SCEE,
+              593,                     // number of files
+              {8410801891219727031U},  // iso hash
+              "pal",                   // decompiler config
+              "jak2",
+              {}}}}},
+          // Jak 2 NTSC-J
+          {"SCPS-15057",                // serial from ELF name
+           {{7409991384254810731U,      // hash of ELF
+             {"ジャックＸダクスター2",  // canonical name
+              GAME_TERRITORY_SCEI,
+              593,                     // number of files
+              {1686904681401593185U},  // iso hash
+              "jp",                    // decompiler config
+              "jak2",
+              {}}}}},
+          // Jak 2 NTSC-K
+          {"SCKA-20010",            // serial from ELF name
+           {{8398029689314218575U,  // hash of ELF
+             {"Jak II",             // canonical name
+              GAME_TERRITORY_SCEI,
+              593,                     // number of files
+              {4637199624374114440U},  // iso hash
+              "ko",                    // decompiler config
+              "jak2",
+              {}}}}},
+      };
+  return database;
+}
 
 void to_json(nlohmann::json& j, const BuildInfo& info) {
   j = nlohmann::json{{"serial", info.serial}, {"elf_hash", info.elf_hash}};
@@ -84,60 +137,21 @@ std::optional<BuildInfo> get_buildinfo_from_path(fs::path iso_data_path) {
   }
   auto buildinfo_path = (iso_data_path / "buildinfo.json").string();
   try {
-    return parse_commented_json(file_util::read_text_file(buildinfo_path), buildinfo_path)
-        .get<BuildInfo>();
+    const auto buildinfo_data = file_util::read_text_file(buildinfo_path);
+    lg::info("Found version info - {}", buildinfo_data);
+    return parse_commented_json(buildinfo_data, buildinfo_path).get<BuildInfo>();
   } catch (std::exception& e) {
     lg::error("JSON parsing error on buildinfo.json - {}", e.what());
     return {};
   }
 }
 
-static const ISOMetadata jak1_ntsc_black_label_info = {
-    "Jak & Daxter™: The Precursor Legacy (Black Label)",
-    GAME_TERRITORY_SCEA,
-    337,
-    11363853835861842434U,
-    "ntsc_v1",
-    "jak1",
-    {"jak1-black-label"}};
-
-// { SERIAL : { ELF_HASH : ISOMetadataDatabase } }
-static const std::unordered_map<std::string, std::unordered_map<uint64_t, ISOMetadata>> isoDatabase{
-    {"SCUS-97124",
-     {{7280758013604870207U, jak1_ntsc_black_label_info},
-      {744661860962747854,
-       {"Jak & Daxter™: The Precursor Legacy",
-        GAME_TERRITORY_SCEA,
-        338,
-        8538304367812415885U,
-        "ntsc_v2",
-        "jak1",
-        {}}}}},
-    {"SCES-50361",
-     {{12150718117852276522U,
-       {"Jak & Daxter™: The Precursor Legacy",
-        GAME_TERRITORY_SCEE,
-        338,
-        16850370297611763875U,
-        "pal",
-        "jak1",
-        {}}}}},
-    {"SCPS-15021",
-     {{16909372048085114219U,
-       {"ジャックＸダクスター　～　旧世界の遺産",
-        GAME_TERRITORY_SCEI,
-        338,
-        1262350561338887717,
-        "jp",
-        "jak1",
-        {}}}}}};
-
 std::optional<ISOMetadata> get_version_info_from_build_info(const BuildInfo& build_info) {
   if (build_info.serial.empty() || build_info.elf_hash == 0) {
     return {};
   }
-  auto dbEntry = isoDatabase.find(build_info.serial);
-  if (dbEntry == isoDatabase.end()) {
+  auto dbEntry = extractor_iso_database().find(build_info.serial);
+  if (dbEntry == extractor_iso_database().end()) {
     return {};
   }
 
@@ -204,10 +218,8 @@ void log_potential_new_db_entry(ExtractorErrorCode error_code,
     lg::info(
         "If this is a new release or version that should be supported, consider adding the "
         "following serial entry to the database:");
-    lg::info(
-        "\t'{{\"{}\", {{{{{}U, {{\"GAME_TITLE\", \"NTSC-U/PAL/NTSC-J\", {}, {}U, "
-        "\"DECOMP_CONFIG_FILENAME_NO_EXTENSION\", \"jak1|jak2|jak3|jakx\", {}}}}}}}}}'",
-        serial, elf_hash, files_extracted, contents_hash);
+    lg::info("serial {}, elf hash {}, files {}, hash {}", serial, elf_hash, files_extracted,
+             contents_hash);
   } else if (error_code == ExtractorErrorCode::VALIDATION_ELF_MISSING_FROM_DB) {
     lg::info(
         "If this is a new release or version that should be supported, consider adding the "
