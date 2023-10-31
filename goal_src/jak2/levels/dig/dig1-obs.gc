@@ -371,7 +371,7 @@
       :inv-mass 1.0
       :linear-damping 0.99
       :angular-damping 0.9
-      :bounce-factor 0.5
+      :bounce-factor 0.7
       :friction-factor 0.1
       :cm-offset-joint (new 'static 'vector :w 1.0)
       :inertial-tensor-box (new 'static 'array meters 3 (meters 1) (meters 3) (meters 1))
@@ -380,7 +380,7 @@
       :max-time-step 0.02
       :gravity (meters 80)
       :idle-distance (meters 200)
-      :attack-force-scale 2.0
+      :attack-force-scale 4.0
       )
     :name '*dig-bomb-crate-cylinder-constants*
     )
@@ -501,7 +501,7 @@
         (suspend)
         )
       )
-    (dotimes (gp-6 12)
+    (dotimes (gp-6 36)
       (ja-no-eval :group! dig-bomb-crate-cylinder-pulse-ja :num! (seek! max 0.437) :frame-num 0.0)
       (until (ja-done? 0)
         (suspend)
@@ -767,7 +767,7 @@
     )
   )
 
-(define *dig-bomb-crate-array* (new 'static 'inline-array vector 8
+(define *dig-bomb-crate-array* (new 'static 'inline-array vector 12
                                  (new 'static 'vector :x -5038.08 :y 5120.0 :z -5038.08)
                                  (new 'static 'vector :x 5038.08 :y 5120.0 :z -5038.08)
                                  (new 'static 'vector :x -5038.08 :y 5120.0 :z 5038.08)
@@ -776,12 +776,16 @@
                                  (new 'static 'vector :x 5038.08 :y 15155.2 :z -5038.08)
                                  (new 'static 'vector :x -5038.08 :y 15155.2 :z 5038.08)
                                  (new 'static 'vector :x 5038.08 :y 15155.2 :z 5038.08)
+                                 (new 'static 'vector :x -5038.08 :y 25155.2 :z -5038.08)
+                                 (new 'static 'vector :x 5038.08 :y 25155.2 :z -5038.08)
+                                 (new 'static 'vector :x -5038.08 :y 25155.2 :z 5038.08)
+                                 (new 'static 'vector :x 5038.08 :y 25155.2 :z 5038.08)
                                  )
         )
 
 (defmethod dig-bomb-crate-method-29 dig-bomb-crate ((this dig-bomb-crate) (arg0 vector))
   (let ((s4-0 (-> this root trans)))
-    (dotimes (s3-0 8)
+    (dotimes (s3-0 12)
       (let ((a0-2 (-> *dig-bomb-crate-array* s3-0))
             (s2-0 (new 'stack-no-clear 'dig-bomb-crate-cylinder-spawn-params))
             )
