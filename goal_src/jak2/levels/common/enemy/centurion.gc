@@ -273,7 +273,7 @@
     :notice-distance (meters 100)
     :notice-distance-delta (meters 10)
     :proximity-notice-distance (meters 100)
-    :default-hit-points 3
+    :default-hit-points 12
     :gnd-collide-with (collide-spec backgnd)
     :overlaps-others-collide-with-filter (collide-spec jak bot player-list)
     :penetrate-knocked (penetrate
