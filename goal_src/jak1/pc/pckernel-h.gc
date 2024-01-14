@@ -180,6 +180,7 @@
    (ps2-hints? symbol) ;; if off, enables extra game hints
 
    ;; lod settings
+   (ps2-shadow? symbol) ;; if off, enables extended object shadows
    (ps2-lod-dist? symbol) ;; use original lod distances
    (force-envmap? symbol) ;; dont use envmap fading (force max).
    (shrub-dist-mod float) ;; shrub render distance modifier
@@ -345,7 +346,8 @@
   ;; get screen size and set to borderless at screen res (if retail)
   (pc-get-active-display-size (&-> obj width) (&-> obj height))
   (if (not *debug-segment*)
-      (set-display-mode! obj 'borderless call-handlers))
+      (set-display-mode! obj 'borderless call-handlers)
+      (set-display-mode! obj 'windowed call-handlers))
   (set! (-> obj gfx-msaa) PC_DEFAULT_MSAA) ;; default msaa
   0)
 
@@ -398,6 +400,7 @@
   (set! (-> obj ps2-se?) #t)
   (set! (-> obj ps2-hints?) #t)
 
+  (set! (-> obj ps2-shadow?) #f)
   (set! (-> obj ps2-lod-dist?) #f)
   (set! (-> obj force-envmap?) #t)
   (set! (-> obj shrub-dist-mod) 1.0)
@@ -416,7 +419,7 @@
   (set! (-> obj subtitle-speaker?) 'auto)
   (reset-camera obj call-handlers)
 
-  (set! (-> obj territory) *default-territory*)
+  (set! (-> obj territory) -1) ;; auto
   0)
 
 (defmethod reset-camera pc-settings ((obj pc-settings) (call-handlers symbol))
@@ -450,6 +453,9 @@
   "return the debug font scale factor to be used."
   `(debug-font-scale-factor *pc-settings*))
 
+
+(defmacro fullscreen? ()
+  `(symbol-member? (-> *pc-settings* display-mode) '(fullscreen borderless)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

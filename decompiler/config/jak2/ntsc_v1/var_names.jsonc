@@ -4228,7 +4228,9 @@
     "vars": {
       "v1-3": "shadow-settings",
       "a3-0": "shadow-geo",
-      "t0-0": "dist"
+      "t0-0": "dist",
+      "a3-2": ["shadow-pack1", "shadow-dma-packet"],
+      "t2-11": ["shadow-pack2", "shadow-dma-packet"]
     }
   },
   "progress-selected": {
@@ -4507,6 +4509,157 @@
   "draw-string": {
     "vars": {
       "v0-2": ["result", "draw-string-result"]
+    }
+  },
+  "get-num-highscores": {
+    "vars": {
+      "gp-0": "count",
+      "s5-0": "max-highscores"
+    }
+  },
+  "highscore-available?": {
+    "args": ["highscore-index"],
+    "vars": {
+      "v0-0": "available?",
+      "v1-0": "index"
+    }
+  },
+  "get-next-highscore": {
+    "args": ["current-highscore-index"],
+    "vars": {
+      "s3-0": "index-change",
+      "s4-0": "max-highscores",
+      "gp-0": "selected-index",
+      "s2-0": "curr-index"
+    }
+  },
+  "get-prev-highscore": {
+    "vars": {
+      "s4-0": "max-highscores",
+      "s3-0": "index-change",
+      "gp-0": "selected-index",
+      "s2-0": "curr-index",
+      "t9-0": "highscore-available-fn",
+      "a0-1": "normalized-index"
+    }
+  },
+  "(method 10 menu-highscores-option)": {
+    "args": ["this", "progress", "font-ctx", "option-index", "selected?"]
+  },
+  "get-highscore-type": {
+    "args": ["highscore-index-arg"],
+    "vars": {
+      "v1-0": "highscore-index",
+      "v0-0": "highscore-type"
+    }
+  },
+  "get-highscore-icon": {
+    "args": ["highscore-index-arg"],
+    "vars": {
+      "v0-0": "texture",
+      "v1-1": "highscore-index"
+    }
+  },
+  "get-highscore-text": {
+    "args": ["highscore-index"],
+    "vars": {
+      "v1-0": "index",
+      "v0-0": "text-id"
+    }
+  },
+  "get-highscore-text-sub": {
+    "args": ["highscore-index"],
+    "vars": {
+      "v0-0": "id",
+      "v1-0": "index"
+    }
+  },
+  "get-highscore-icon-scale": {
+    "args": ["highscore-index"],
+    "vars": {
+      "f0-0": "scale",
+      "f2-0": "guncourse-scale",
+      "f1-0": "race-scale"
+    }
+  },
+  "get-highscore-icon-xoffset": {
+    "args": ["highscore-index"]
+  },
+  "get-highscore-icon-yoffset": {
+    "args": ["highscore-index"],
+    "vars": {
+      "v0-1": "offset",
+      "a0-1": "guncourse-offset",
+      "v1-0": "race-offset"
+    }
+  },
+  "str-print-time": {
+    "args": ["time"],
+    "vars": {
+      "gp-0": "minutes",
+      "v1-5": "remainder-minutes",
+      "s5-0": "seconds",
+      "v1-6": "remainder-seconds",
+      "s3-0": "milliseconds"
+    }
+  },
+  "draw-highscore-cup": {
+    "args": ["highscore-option", "arg1", "arg2", "arg3", "arg4", "arg5"]
+  },
+  "eval-highscore": {
+    "args": ["print-highscore-info"]
+  },
+  "get-highscore-score": {
+    "args": ["highscore-index"],
+    "vars": {
+      "v1-0": "index",
+      "v0-0": "score-array-index"
+    }
+  },
+  "(method 9 highscore-info)": {
+    "args": ["this", "score"],
+    "vars": {
+      "v0-0": "place"
+    }
+  },
+  "(method 9 menu-highscores-option)": {
+    "args": ["this", "progress", "selected?"],
+    "vars": {
+      "s5-0": "play-sound?"
+    }
+  },
+  "(method 135 enemy)": {
+    "args": ["this", "sound"],
+    "vars": {
+      "gp-0": ["name", "sound-name"],
+      "v1-0": "sound-type"
+    }
+  },
+  "(code target-darkjak-running-attack)": {
+    "vars": {
+      "t1-3": ["imp-sound", "sound-name"]
+    }
+  },
+  "(method 9 menu-secret-option)": {
+    "vars": {
+      "s5-1": "hero?",
+      "s3-0": "min-item",
+      "s2-0": "max-item",
+      "s5-2": "scroll-sound?",
+      "v1-74": "item",
+      "a0-54": "flag",
+      "a1-9": "on-off?"
+    }
+  },
+  "(method 10 menu-unlocked-menu-option)": {
+    "vars": {
+      "s5-0": "secrets",
+      "f30-0": "alpha"
+    }
+  },
+  "joint-exploder-joint-callback": {
+    "vars": {
+      "s4-0": ["exploder", "joint-exploder"]
     }
   }
 }

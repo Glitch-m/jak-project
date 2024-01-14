@@ -1,5 +1,6 @@
 #include "extract_collide_frags.h"
 
+#include "common/log/log.h"
 #include "common/util/FileUtil.h"
 
 namespace decompiler {
@@ -230,6 +231,7 @@ void set_vertices_for_tri(tfrag3::CollisionMesh::Vertex* out, const math::Vector
 
 void extract_collide_frags(const level_tools::DrawableTreeCollideFragment* tree,
                            const std::vector<const level_tools::DrawableTreeInstanceTie*>& ties,
+                           const Config& config,
                            const std::string& debug_name,
                            tfrag3::Level& out,
                            bool dump_level) {
@@ -260,8 +262,8 @@ void extract_collide_frags(const level_tools::DrawableTreeCollideFragment* tree,
 
   if (dump_level) {
     auto debug_out = debug_dump_to_obj(all_frags);
-    auto file_path =
-        file_util::get_file_path({"debug_out", fmt::format("collide-{}.obj", debug_name)});
+    auto file_path = file_util::get_file_path(
+        {fmt::format("debug_out/{}", config.game_name), fmt::format("collide-{}.obj", debug_name)});
     file_util::create_dir_if_needed_for_file(file_path);
     file_util::write_text_file(file_path, debug_out);
   }
@@ -296,16 +298,69 @@ void handle_collide_fragment(const TypedRef& collide_fragment,
 
   level_tools::Vector bbox_min;
   bbox_min.read_from_file(get_field_ref(collide_fragment, "bbox", dts));
+
+  // There's a lot of indirection:
+  // grid -> buckets -> index -> poly -> vertex.
+
+  // First step: 3D coordinates are converted to a cell in a 3D grid.
+  // The dimensions of this grid are stored as u8's in the dimension array.
+  u32 dim_array = deref_u32(get_field_ref(collide_fragment, "dimension-array", dts), 0);
+  u8 counts[4];
+  memcpy(counts, &dim_array, 4);
+  ASSERT(counts[3] == 0);  // unused
+
+  // Each grid cell maps to a bucket (they go in order, no fancy hash function)
+  u32 num_buckets = read_plain_data_field<uint16_t>(collide_fragment, "num-buckets", dts);
+  // this should match the grid dims
+  ASSERT(counts[0] * counts[1] * counts[2] == num_buckets);
+
+  // read the buckets
+  struct BucketEntry {
+    s16 index, count;
+  };
+  std::vector<BucketEntry> buckets(num_buckets);
+  memcpy_from_plain_data((u8*)buckets.data(),
+                         deref_label(get_field_ref(collide_fragment, "bucket-array", dts)),
+                         sizeof(BucketEntry) * num_buckets);
+
+  // Each bucket references a series of entries in the index list. Check all buckets to see the
+  // length of the index list.
+  int max_from_buckets = 0;
+  for (const auto& bucket : buckets) {
+    int end = bucket.count + bucket.index;
+    if (end > max_from_buckets) {
+      max_from_buckets = end;
+    }
+  }
+  // confirm the index list length matches
+  u32 num_indices = read_plain_data_field<uint16_t>(collide_fragment, "num-indices", dts);
+  ASSERT(max_from_buckets == (int)num_indices);
+
+  // read the index list
+  std::vector<u8> index_list(num_indices);
+  memcpy_from_plain_data((u8*)index_list.data(),
+                         deref_label(get_field_ref(collide_fragment, "index-array", dts)),
+                         num_indices);
+  u8 max_in_index_list = 0;
+  for (auto x : index_list) {
+    max_in_index_list = std::max(x, max_in_index_list);
+  }
+
   u8 poly_count = read_plain_data_field<uint8_t>(collide_fragment, "poly-count", dts);
   u8 num_polys = read_plain_data_field<uint8_t>(collide_fragment, "num-polys", dts);
   ASSERT(poly_count == num_polys);
+  if (poly_count == 0) {
+    ASSERT(max_in_index_list == 255);
+  } else {
+    ASSERT(num_polys == max_in_index_list + 1);
+  }
 
   // this value seems to be bogus
   // u16 vert_count = read_plain_data_field<uint16_t>(collide_fragment, "num-verts", dts);
-  std::vector<Poly> polys(poly_count);
+  std::vector<Poly> polys(max_in_index_list + 1);
   memcpy_from_plain_data((u8*)polys.data(),
                          deref_label(get_field_ref(collide_fragment, "poly-array", dts)),
-                         4 * poly_count);
+                         4 * (max_in_index_list + 1));
   int max_vi = 0;
   int max_pat = 0;
   for (const auto& p : polys) {
@@ -355,10 +410,40 @@ void handle_collide_fragment(const TypedRef& collide_fragment,
   }
 }
 
+std::string debug_dump_to_obj(const std::vector<tfrag3::CollisionMesh::Vertex>& verts_in) {
+  std::vector<math::Vector4f> verts;
+  std::vector<math::Vector<u32, 3>> faces;
+
+  for (auto& v : verts_in) {
+    verts.emplace_back(v.x / 4096.0, v.y / 4096.0, v.z / 4096.0, 1.0);
+
+    u32 v_len = verts.size();
+    if (v_len % 3 == 0) {
+      // add face from last 3 vertices
+      faces.emplace_back(v_len - 2, v_len - 1, v_len);
+    }
+  }
+
+  std::string result;
+  for (auto& vert : verts) {
+    result += fmt::format("v {} {} {}\n", vert.x(), vert.y(), vert.z());
+  }
+
+  for (auto& face : faces) {
+    result += fmt::format("f {}/{} {}/{} {}/{}\n", face.x(), face.x(), face.y(), face.y(), face.z(),
+                          face.z());
+  }
+
+  return result;
+}
+
 void extract_collide_frags(const level_tools::CollideHash& chash,
                            const std::vector<const level_tools::DrawableTreeInstanceTie*>& ties,
+                           const Config& config,
+                           const std::string& debug_name,
                            const decompiler::DecompilerTypeSystem& dts,
-                           tfrag3::Level& out) {
+                           tfrag3::Level& out,
+                           bool dump_level) {
   // We need to find all collide-hash-fragments, but we can't just scan through the entire file.
   // for collide-hash-fragments, we need to figure out which TIEs they belong to, to apply the
   // instance transformation matrix.
@@ -402,7 +487,7 @@ void extract_collide_frags(const level_tools::CollideHash& chash,
     data_ref.byte_offset += 4;
   }
 
-  // now, ties
+  // first, all ties. Store collide-hash-fragments that are associated by ties.
   for (auto tt : ties) {
     auto last_array = tt->arrays.back().get();
     auto as_instance_array = dynamic_cast<level_tools::DrawableInlineArrayInstanceTie*>(last_array);
@@ -420,6 +505,16 @@ void extract_collide_frags(const level_tools::CollideHash& chash,
         handle_collide_fragment(typed_ref_from_basic(frag, dts), dts, mat, &out.collision.vertices);
       }
     }
+  }
+
+  if (dump_level) {
+    // out.collision.vertices every 3 vertices make a face, so it duplicates vertices in many cases
+    // for now debug_dump_to_obj isn't smart and doesn't hash these to save space or anything
+    auto debug_out = debug_dump_to_obj(out.collision.vertices);
+    auto file_path = file_util::get_file_path(
+        {fmt::format("debug_out/{}", config.game_name), fmt::format("collide-{}.obj", debug_name)});
+    file_util::create_dir_if_needed_for_file(file_path);
+    file_util::write_text_file(file_path, debug_out);
   }
 }
 }  // namespace decompiler
