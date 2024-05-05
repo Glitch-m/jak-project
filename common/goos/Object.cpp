@@ -47,7 +47,7 @@
 #include "common/util/crc32.h"
 #include "common/util/print_float.h"
 
-#include "third-party/fmt/core.h"
+#include "fmt/core.h"
 
 namespace goos {
 
@@ -66,7 +66,6 @@ SymbolTable::~SymbolTable() {
 }
 
 InternedSymbolPtr SymbolTable::intern(const char* str) {
-  InternedSymbolPtr result;
   size_t string_len = strlen(str);
   u32 hash = crc32((const u8*)str, string_len);
 

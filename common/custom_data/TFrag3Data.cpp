@@ -9,6 +9,7 @@
 #include "third-party/sse2neon/sse2neon.h"
 #endif
 
+#include "common/log/log.h"
 #include "common/util/Assert.h"
 
 namespace tfrag3 {
@@ -42,6 +43,7 @@ void ShrubDraw::serialize(Serializer& ser) {
   ser.from_ptr(&num_triangles);
   ser.from_ptr(&first_index_index);
   ser.from_ptr(&num_indices);
+  ser.from_ptr(&proto_idx);
 }
 
 void InstancedStripDraw::serialize(Serializer& ser) {
@@ -416,6 +418,9 @@ void ShrubTree::serialize(Serializer& ser) {
   for (auto& draw : static_draws) {
     draw.serialize(ser);
   }
+
+  ser.from_ptr(&has_per_proto_visibility_toggle);
+  ser.from_string_vector(&proto_names);
 }
 
 void BVH::serialize(Serializer& ser) {
@@ -791,8 +796,8 @@ void print_memory_usage(const tfrag3::Level& lev, int uncompressed_data_size) {
 
   for (const auto& x : known_categories) {
     if (x.second) {
-      fmt::print("{:30s} : {:6d} kB {:3.1f}%\n", x.first, x.second / 1024,
-                 100.f * (float)x.second / uncompressed_data_size);
+      lg::print("{:30s} : {:6d} kB {:3.1f}%\n", x.first, x.second / 1024,
+                100.f * (float)x.second / uncompressed_data_size);
     }
   }
 }

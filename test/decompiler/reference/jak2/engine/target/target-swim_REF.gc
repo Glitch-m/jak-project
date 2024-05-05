@@ -260,10 +260,7 @@
           (set! f30-1
                 (seek f30-1 (lerp-scale 1.0 0.0 (-> self control ctrl-xz-vel) 16384.0 32768.0) (* 4.0 (seconds-per-frame)))
                 )
-          (let ((v1-107 (-> self skel root-channel 1)))
-            (set! (-> v1-107 frame-interp 1) f24-1)
-            (set! (-> v1-107 frame-interp 0) f24-1)
-            )
+          (ja :chan 1 :frame-interp0 f24-1 :frame-interp1 f24-1)
           (ja :num! (loop!
                      (/ (-> self control ctrl-xz-vel)
                         (* 60.0
@@ -291,7 +288,7 @@
              (spawn-ripples
                (-> self water)
                0.2
-               (vector<-cspace! (new 'stack-no-clear 'vector) (joint-node-index jakb-lod0-jg Rtoes))
+               (vector<-cspace! (new 'stack-no-clear 'vector) (joint-node jakb-lod0-jg Rtoes))
                0
                (vector-float*! (new 'stack-no-clear 'vector) (-> self control transv) 2.5)
                #f
@@ -302,7 +299,7 @@
              (spawn-ripples
                (-> self water)
                0.2
-               (vector<-cspace! (new 'stack-no-clear 'vector) (joint-node-index jakb-lod0-jg Ltoes))
+               (vector<-cspace! (new 'stack-no-clear 'vector) (joint-node jakb-lod0-jg Ltoes))
                0
                (vector-float*! (new 'stack-no-clear 'vector) (-> self control transv) 2.5)
                #f

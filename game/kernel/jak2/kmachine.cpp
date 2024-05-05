@@ -33,6 +33,7 @@
 #include "game/kernel/jak2/kdgo.h"
 #include "game/kernel/jak2/klink.h"
 #include "game/kernel/jak2/klisten.h"
+#include "game/kernel/jak2/kmachine_extras.h"
 #include "game/kernel/jak2/kmalloc.h"
 #include "game/kernel/jak2/kscheme.h"
 #include "game/kernel/jak2/ksound.h"
@@ -42,7 +43,6 @@
 #include "game/sce/libgraph.h"
 #include "game/sce/sif_ee.h"
 #include "game/sce/stubs.h"
-#include "game/system/vm/vm.h"
 
 using namespace ee;
 
@@ -363,8 +363,6 @@ void InitIOP() {
   printf("InitIOP OK\n");
 }
 
-AutoSplitterBlock g_auto_splitter_block_jak2;
-
 int InitMachine() {
   // heap_start = malloc(0x10);
   // set up global heap (modified, the default size in the release game is 32 MB in all cases)
@@ -434,10 +432,6 @@ int ShutdownMachine() {
 
   ShutdownGoalProto();
 
-  // OpenGOAL only - kill ps2 VM
-  if (VM::use) {
-    VM::vm_kill();
-  }
   return 0;
 }
 
@@ -510,14 +504,14 @@ u64 kopen(u64 fs, u64 name, u64 mode) {
   file_stream->mode = mode;
   file_stream->name = name;
   file_stream->flags = 0;
-  printf("****** CALL TO kopen() ******\n");
+  lg::print("****** CALL TO kopen() ******\n");
   char buffer[128];
   // sprintf(buffer, "host:%s", Ptr<String>(name)->data());
   sprintf(buffer, "%s", Ptr<String>(name)->data());
-  if (!strcmp(Ptr<Symbol4<u8>>(mode)->name_cstr(), "read")) {
+  if (!strcmp(symbol_name_cstr(*Ptr<Symbol4<u8>>(mode)), "read")) {
     // 0x1
     file_stream->file = sceOpen(buffer, SCE_RDONLY);
-  } else if (!strcmp(Ptr<Symbol4<u8>>(mode)->name_cstr(), "append")) {
+  } else if (!strcmp(symbol_name_cstr(*Ptr<Symbol4<u8>>(mode)), "append")) {
     // new in jak 2!
     // 0x202
     file_stream->file = sceOpen(buffer, SCE_CREAT | SCE_WRONLY);
@@ -527,241 +521,6 @@ u64 kopen(u64 fs, u64 name, u64 mode) {
   }
 
   return fs;
-}
-
-/*!
- * PC port functions START
- */
-
-void update_discord_rpc(u32 discord_info) {
-  if (gDiscordRpcEnabled) {
-    DiscordRichPresence rpc;
-    char state[128];
-    char large_image_key[128];
-    char large_image_text[128];
-    char small_image_key[128];
-    char small_image_text[128];
-    auto info = discord_info ? Ptr<DiscordInfo>(discord_info).c() : NULL;
-    if (info) {
-      // Get the data from GOAL
-      int orbs = (int)info->orb_count;
-      int gems = (int)info->gem_count;
-      // convert encodings
-      std::string status = get_font_bank(GameTextVersion::JAK2)
-                               ->convert_game_to_utf8(Ptr<String>(info->status).c()->data());
-
-      // get rid of special encodings like <COLOR_WHITE>
-      std::regex r("<.*?>");
-      while (std::regex_search(status, r)) {
-        status = std::regex_replace(status, r, "");
-      }
-
-      char* level = Ptr<String>(info->level).c()->data();
-      auto cutscene = Ptr<Symbol4<u32>>(info->cutscene)->value();
-      float time = info->time_of_day;
-      float percent_completed = info->percent_completed;
-      std::bitset<32> focus_status;
-      focus_status = info->focus_status;
-      char* task = Ptr<String>(info->task).c()->data();
-
-      // Construct the DiscordRPC Object
-      const char* full_level_name =
-          get_full_level_name(level_names, level_name_remap, Ptr<String>(info->level).c()->data());
-      memset(&rpc, 0, sizeof(rpc));
-      // if we have an active task, set the mission specific image for it
-      // also small hack to prevent oracle image from showing up while inside levels
-      // like hideout, onintent, etc.
-      if (strcmp(task, "unknown") != 0 && strcmp(task, "city-oracle") != 0) {
-        strcpy(large_image_key, task);
-      } else {
-        // if we are in an outdoors level, use the picture for the corresponding time of day
-        if (!indoors(indoor_levels, level)) {
-          char level_with_tod[128];
-          strcpy(level_with_tod, level);
-          strcat(level_with_tod, "-");
-          strcat(level_with_tod, time_of_day_str(time));
-          strcpy(large_image_key, level_with_tod);
-        } else {
-          strcpy(large_image_key, level);
-        }
-      }
-      strcpy(large_image_text, full_level_name);
-      if (!strcmp(full_level_name, "unknown")) {
-        strcpy(large_image_key, full_level_name);
-        strcpy(large_image_text, level);
-      }
-      rpc.largeImageKey = large_image_key;
-      if (cutscene != offset_of_s7()) {
-        strcpy(state, "Watching a cutscene");
-        // temporarily move these counters to the large image tooltip during a cutscene
-        strcat(large_image_text,
-               fmt::format(" | {:.0f}% | Orbs: {} | Gems: {} | {}", percent_completed,
-                           std::to_string(orbs), std::to_string(gems), get_time_of_day(time))
-                   .c_str());
-      } else {
-        strcpy(state, fmt::format("{:.0f}% | Orbs: {} | Gems: {} | {}", percent_completed,
-                                  std::to_string(orbs), std::to_string(gems), get_time_of_day(time))
-                          .c_str());
-      }
-      rpc.largeImageText = large_image_text;
-      rpc.state = state;
-      // check for any special conditions to display for the small image
-      if (FOCUS_TEST(focus_status, FocusStatus::Board)) {
-        strcpy(small_image_key, "focus-status-board");
-        strcpy(small_image_text, "On the JET-Board");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Mech)) {
-        strcpy(small_image_key, "focus-status-mech");
-        strcpy(small_image_text, "In the Titan Suit");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Pilot)) {
-        strcpy(small_image_key, "focus-status-pilot");
-        strcpy(small_image_text, "Driving a Zoomer");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Indax)) {
-        strcpy(small_image_key, "focus-status-indax");
-        strcpy(small_image_text, "Playing as Daxter");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Dark)) {
-        strcpy(small_image_key, "focus-status-dark");
-        strcpy(small_image_text, "Dark Jak");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Disable) &&
-                 FOCUS_TEST(focus_status, FocusStatus::Grabbed)) {
-        // being in a turret sets disable and grabbed flags
-        strcpy(small_image_key, "focus-status-turret");
-        strcpy(small_image_text, "In a Gunpod");
-      } else if (FOCUS_TEST(focus_status, FocusStatus::Gun)) {
-        strcpy(small_image_key, "focus-status-gun");
-        strcpy(small_image_text, "Using a Gun");
-      } else {
-        strcpy(small_image_key, "");
-        strcpy(small_image_text, "");
-      }
-      rpc.smallImageKey = small_image_key;
-      rpc.smallImageText = small_image_text;
-      rpc.startTimestamp = gStartTime;
-      rpc.details = status.c_str();
-      rpc.partySize = 0;
-      rpc.partyMax = 0;
-      Discord_UpdatePresence(&rpc);
-    }
-  } else {
-    Discord_ClearPresence();
-  }
-}
-
-void pc_set_levels(u32 lev_list) {
-  if (!Gfx::GetCurrentRenderer()) {
-    return;
-  }
-  std::vector<std::string> levels;
-  for (int i = 0; i < LEVEL_MAX; i++) {
-    u32 lev = *Ptr<u32>(lev_list + i * 4);
-    std::string ls = Ptr<String>(lev).c()->data();
-    if (ls != "none" && ls != "#f" && ls != "") {
-      levels.push_back(ls);
-    }
-  }
-
-  Gfx::GetCurrentRenderer()->set_levels(levels);
-}
-
-void pc_set_active_levels(u32 lev_list) {
-  if (!Gfx::GetCurrentRenderer()) {
-    return;
-  }
-  std::vector<std::string> levels;
-  for (int i = 0; i < LEVEL_MAX; i++) {
-    u32 lev = *Ptr<u32>(lev_list + i * 4);
-    std::string ls = Ptr<String>(lev).c()->data();
-    if (ls != "none" && ls != "#f" && ls != "") {
-      levels.push_back(ls);
-    }
-  }
-
-  Gfx::GetCurrentRenderer()->set_active_levels(levels);
-}
-
-void init_autosplit_struct() {
-  g_auto_splitter_block_jak2.pointer_to_symbol =
-      (u64)g_ee_main_mem + (u64)intern_from_c("*autosplit-info-jak2*")->value();
-}
-
-u32 alloc_vagdir_names(u32 heap_sym) {
-  auto alloced_heap = (Ptr<u64>)alloc_heap_memory(heap_sym, gVagDir.count * 8 + 8);
-  if (alloced_heap.offset) {
-    *alloced_heap = gVagDir.count;
-    // use entry -1 to get the amount
-    alloced_heap = alloced_heap + 8;
-    for (size_t i = 0; i < gVagDir.count; ++i) {
-      char vagname_temp[9];
-      memcpy(vagname_temp, gVagDir.vag[i].name, 8);
-      for (int j = 0; j < 8; ++j) {
-        vagname_temp[j] = tolower(vagname_temp[j]);
-      }
-      vagname_temp[8] = 0;
-      u64 vagname_val;
-      memcpy(&vagname_val, vagname_temp, 8);
-      *(alloced_heap + i * 8) = vagname_val;
-    }
-    return alloced_heap.offset;
-  }
-  return s7.offset;
-}
-
-// std::vector<std::string> valid_levels = {
-//    "default-level", "intro",    "demo",     "title",    "vinroom",   "drillmid", "drill",
-//    "drillb",        "drillmtn", "sewer",    "sewerb",   "sewer",     "sewescb",  "tomba",
-//    "tombb",         "tombc",    "tombd",    "tombe",    "tombext",   "tombboss", "under",
-//    "underb",        "palcab",   "palshaft", "palboss",  "palroof",   "palout",   "throne",
-//    "palent",        "prison",   "forexita", "forexitb", "forresca",  "forrescb", "fordumpa",
-//    "fordumpb",      "fordumpc", "fordumpd", "strip",    "ruins",     "sagehut",  "atoll",
-//    "atollext",      "mountain", "mtnext",   "forest",   "forestb",   "mincan",   "ctywide",
-//    "ctykora",       "ctyasha",  "ctygena",  "ctygenb",  "ctygenc",   "ctysluma", "ctyslumb",
-//    "ctyslumc",      "ctyport",  "ctyfarma", "ctyfarmb", "ctyinda",   "consite",  "consiteb",
-//    "ctyindb",       "ctymarka", "ctymarkb", "ctypal",   "stadium",   "stadiumb", "stadiumc",
-//    "stadiumd",      "skatea",   "garage",   "stadblmp", "onintent",  "kiosk",    "oracle",
-//    "hideout",       "hiphog",   "gungame",  "dig1",     "dig3a",     "dig3b",    "caspad",
-//    "castle",        "casboss",  "casext",   "cascity",  "village1",  "introcst", "nest",
-//    "nestb",         "outrocst", "portwall", "island1",  "skatepark", "halfpipe", "vistest",
-//    "woodstest",     "tobytest", "chartest", "dptest",   "ctyfence",  "4aaron",   "4pal01",
-//    "andrew01",      "bsbs",     "eitest",   "miketest", "tatetest",  "teststdc", "teststdd",
-//    "wasall",        "stadocc"};
-//
-// std::vector<std::string> levels_dumped_lights = {};
-// std::vector<std::string> levels_dumped_regions = {};
-// std::vector<std::string> levels_dumped_samples = {};
-
-inline u64 bool_to_symbol(const bool val) {
-  return val ? static_cast<u64>(s7.offset) + true_symbol_offset(g_game_version) : s7.offset;
-}
-
-// u64 pc_has_level_been_dumped_lights(u32 level_name_str) {
-//  auto level_name = std::string(Ptr<String>(level_name_str).c()->data());
-//
-//  for (const auto& level : levels_dumped_lights) {
-//    if (level == level_name) {
-//      return bool_to_symbol(true);
-//    }
-//  }
-//
-//  levels_dumped_lights.push_back(level_name);
-//  return bool_to_symbol(false);
-//}
-//
-// u64 pc_has_level_been_dumped_regions(u32 level_name_str) {
-//  auto level_name = std::string(Ptr<String>(level_name_str).c()->data());
-//
-//  for (const auto& level : levels_dumped_regions) {
-//    if (level == level_name) {
-//      return bool_to_symbol(true);
-//    }
-//  }
-//
-//  levels_dumped_regions.push_back(level_name);
-//  return bool_to_symbol(false);
-//}
-
-void encode_utf8_string(u32 src_str_ptr, u32 str_dest_ptr) {
-  auto str = std::string(Ptr<String>(src_str_ptr).c()->data());
-  std::string converted = get_font_bank(GameTextVersion::JAK2)->convert_utf8_to_game(str);
-  strcpy(Ptr<String>(str_dest_ptr).c()->data(), converted.c_str());
 }
 
 void InitMachine_PCPort() {
@@ -776,22 +535,78 @@ void InitMachine_PCPort() {
       },
       make_string_from_c);
 
-  make_function_symbol_from_c("__pc-set-levels", (void*)pc_set_levels);
-  make_function_symbol_from_c("__pc-set-active-levels", (void*)pc_set_active_levels);
+  make_function_symbol_from_c("__pc-set-levels", (void*)kmachine_extras::pc_set_levels);
+  make_function_symbol_from_c("__pc-set-active-levels",
+                              (void*)kmachine_extras::pc_set_active_levels);
   make_function_symbol_from_c("__pc-get-tex-remap", (void*)lookup_jak2_texture_dest_offset);
-  make_function_symbol_from_c("pc-init-autosplitter-struct", (void*)init_autosplit_struct);
-  make_function_symbol_from_c("pc-encode-utf8-string", (void*)encode_utf8_string);
+  make_function_symbol_from_c("pc-init-autosplitter-struct",
+                              (void*)kmachine_extras::init_autosplit_struct);
+  make_function_symbol_from_c("pc-encode-utf8-string", (void*)kmachine_extras::encode_utf8_string);
 
   // discord rich presence
-  make_function_symbol_from_c("pc-discord-rpc-update", (void*)update_discord_rpc);
+  make_function_symbol_from_c("pc-discord-rpc-update", (void*)kmachine_extras::update_discord_rpc);
 
   // debugging tools
-  make_function_symbol_from_c("alloc-vagdir-names", (void*)alloc_vagdir_names);
+  make_function_symbol_from_c("alloc-vagdir-names", (void*)kmachine_extras::alloc_vagdir_names);
 
-  /*make_function_symbol_from_c("has-level-been-dumped-lights?",
-                              (void*)pc_has_level_been_dumped_lights);
-  make_function_symbol_from_c("has-level-been-dumped-regions?",
-                              (void*)pc_has_level_been_dumped_regions);*/
+  // external RPCs
+  make_function_symbol_from_c("pc-fetch-external-speedrun-times",
+                              (void*)kmachine_extras::pc_fetch_external_speedrun_times);
+  make_function_symbol_from_c("pc-fetch-external-race-times",
+                              (void*)kmachine_extras::pc_fetch_external_race_times);
+  make_function_symbol_from_c("pc-fetch-external-highscores",
+                              (void*)kmachine_extras::pc_fetch_external_highscores);
+  make_function_symbol_from_c("pc-get-external-speedrun-time",
+                              (void*)kmachine_extras::pc_get_external_speedrun_time);
+  make_function_symbol_from_c("pc-get-external-race-time",
+                              (void*)kmachine_extras::pc_get_external_race_time);
+  make_function_symbol_from_c("pc-get-external-highscore",
+                              (void*)kmachine_extras::pc_get_external_highscore);
+  make_function_symbol_from_c("pc-get-num-external-speedrun-times",
+                              (void*)kmachine_extras::pc_get_num_external_speedrun_times);
+  make_function_symbol_from_c("pc-get-num-external-race-times",
+                              (void*)kmachine_extras::pc_get_num_external_race_times);
+  make_function_symbol_from_c("pc-get-num-external-highscores",
+                              (void*)kmachine_extras::pc_get_num_external_highscores);
+
+  // speedrunning stuff
+  make_function_symbol_from_c("pc-sr-mode-get-practice-entries-amount",
+                              (void*)kmachine_extras::pc_sr_mode_get_practice_entries_amount);
+  make_function_symbol_from_c("pc-sr-mode-get-practice-entry-name",
+                              (void*)kmachine_extras::pc_sr_mode_get_practice_entry_name);
+  make_function_symbol_from_c("pc-sr-mode-get-practice-entry-continue-point",
+                              (void*)kmachine_extras::pc_sr_mode_get_practice_entry_continue_point);
+  make_function_symbol_from_c(
+      "pc-sr-mode-get-practice-entry-history-success",
+      (void*)kmachine_extras::pc_sr_mode_get_practice_entry_history_success);
+  make_function_symbol_from_c(
+      "pc-sr-mode-get-practice-entry-history-attempts",
+      (void*)kmachine_extras::pc_sr_mode_get_practice_entry_history_attempts);
+  make_function_symbol_from_c(
+      "pc-sr-mode-get-practice-entry-session-success",
+      (void*)kmachine_extras::pc_sr_mode_get_practice_entry_session_success);
+  make_function_symbol_from_c(
+      "pc-sr-mode-get-practice-entry-session-attempts",
+      (void*)kmachine_extras::pc_sr_mode_get_practice_entry_session_attempts);
+  make_function_symbol_from_c("pc-sr-mode-get-practice-entry-avg-time",
+                              (void*)kmachine_extras::pc_sr_mode_get_practice_entry_avg_time);
+  make_function_symbol_from_c("pc-sr-mode-get-practice-entry-fastest-time",
+                              (void*)kmachine_extras::pc_sr_mode_get_practice_entry_fastest_time);
+  make_function_symbol_from_c("pc-sr-mode-record-practice-entry-attempt!",
+                              (void*)kmachine_extras::pc_sr_mode_record_practice_entry_attempt);
+  make_function_symbol_from_c("pc-sr-mode-init-practice-info!",
+                              (void*)kmachine_extras::pc_sr_mode_init_practice_info);
+  make_function_symbol_from_c("pc-sr-mode-get-custom-category-amount",
+                              (void*)kmachine_extras::pc_sr_mode_get_custom_category_amount);
+  make_function_symbol_from_c("pc-sr-mode-get-custom-category-name",
+                              (void*)kmachine_extras::pc_sr_mode_get_custom_category_name);
+  make_function_symbol_from_c(
+      "pc-sr-mode-get-custom-category-continue-point",
+      (void*)kmachine_extras::pc_sr_mode_get_custom_category_continue_point);
+  make_function_symbol_from_c("pc-sr-mode-init-custom-category-info!",
+                              (void*)kmachine_extras::pc_sr_mode_init_custom_category_info);
+  make_function_symbol_from_c("pc-sr-mode-dump-new-custom-category",
+                              (void*)kmachine_extras::pc_sr_mode_dump_new_custom_category);
 
   // setup string constants
   auto user_dir_path = file_util::get_user_config_dir();
