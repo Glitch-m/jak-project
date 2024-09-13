@@ -273,7 +273,10 @@
       (suspend)
       (ja :num! (seek!))
       )
-    (suspend-for (seconds 2)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 2))
+        (suspend)
+        )
       )
     )
   :post ja-post
@@ -1084,3 +1087,7 @@
     )
   :post transform-post
   )
+
+
+
+

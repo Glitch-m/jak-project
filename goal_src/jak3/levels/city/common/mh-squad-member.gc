@@ -280,6 +280,10 @@
             )
         )
       )
-    (call-parent-state-handler trans)
+    (let ((t9-3 (-> (find-parent-state) trans)))
+      (if t9-3
+          (t9-3)
+          )
+      )
     )
   )

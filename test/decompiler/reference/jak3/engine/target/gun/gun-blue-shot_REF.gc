@@ -3152,7 +3152,10 @@
 (defstate dissipate (gun-blue-shot-3)
   :virtual #t
   :code (behavior ()
-    (suspend-for (seconds 0.5)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 0.5))
+        (suspend)
+        )
       )
     (go-virtual die)
     )
@@ -3162,7 +3165,10 @@
 (defstate impact (gun-blue-shot-3)
   :virtual #t
   :code (behavior ()
-    (suspend-for (seconds 0.5)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 0.5))
+        (suspend)
+        )
       )
     (go-virtual die)
     )

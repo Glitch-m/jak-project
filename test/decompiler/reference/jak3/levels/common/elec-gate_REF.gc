@@ -720,7 +720,10 @@
 (defstate shutdown-camera (elec-gate)
   :virtual #t
   :code (behavior ()
-    (suspend-for (seconds 1)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 1))
+        (suspend)
+        )
       )
     (format 0 "~s~%" (-> self name))
     (if (res-lump-struct (-> self entity) 'camera-name structure)
@@ -733,7 +736,10 @@
           :to *entity-pool*
           )
         )
-    (suspend-for (seconds 1)
+    (let ((gp-2 (current-time)))
+      (until (time-elapsed? gp-2 (seconds 1))
+        (suspend)
+        )
       )
     (go-virtual shutdown)
     )

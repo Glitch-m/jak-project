@@ -229,7 +229,11 @@
 (defstate waiting (wvehicle)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     )
   :exit (behavior ()
     (when (-> self minimap)
