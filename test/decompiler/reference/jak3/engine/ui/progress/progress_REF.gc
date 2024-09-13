@@ -1566,7 +1566,13 @@
     (progress-method-33 self (-> *progress-work* full-screen))
     (cond
       ((>= (-> self pos-transition) 0.38)
-       (draw! *bigmap* 1792 1840 2304 2256)
+       (let ((t9-15 (method-of-object *bigmap* bigmap-method-12)))
+         1792
+         1840
+         2304
+         2256
+         (t9-15)
+         )
        )
       (else
         (let ((s4-1 (vector<-cspace! (new 'stack-no-clear 'vector) (-> self node-list data 21)))
@@ -1576,9 +1582,15 @@
           (set! (-> gp-1 quad) (the-as uint128 0))
           (let ((s5-2 (new 'stack-no-clear 'vector4w)))
             (set! (-> s5-2 quad) (the-as uint128 0))
-            (if (and (transform-point-qword! gp-1 s4-1) (transform-point-qword! s5-2 s3-1))
-                (draw! *bigmap* (/ (-> s5-2 x) 16) (/ (-> s5-2 y) 16) (/ (-> gp-1 x) 16) (/ (-> gp-1 y) 16))
+            (when (and (transform-point-qword! gp-1 s4-1) (transform-point-qword! s5-2 s3-1))
+              (let ((t9-20 (method-of-object *bigmap* bigmap-method-12)))
+                (/ (-> s5-2 x) 16)
+                (/ (-> s5-2 y) 16)
+                (/ (-> gp-1 x) 16)
+                (/ (-> gp-1 y) 16)
+                (t9-20)
                 )
+              )
             )
           )
         )
@@ -1649,64 +1661,64 @@
           (let ((t9-0 format)
                 (a0-3 #t)
                 (a1-1 "DONE NOTIFY: ~S ~S~%")
-                (v1-3 (the-as mc-status-code (-> block param 1)))
+                (v1-3 (-> block param 1))
                 )
             (t9-0
               a0-3
               a1-1
               (cond
-                ((= v1-3 (mc-status-code bad-version))
+                ((= v1-3 15)
                  "bad-version"
                  )
-                ((= v1-3 (mc-status-code no-save))
+                ((= v1-3 13)
                  "no-save"
                  )
-                ((= v1-3 (mc-status-code no-last))
+                ((= v1-3 10)
                  "no-last"
                  )
-                ((= v1-3 (mc-status-code no-space))
+                ((= v1-3 14)
                  "no-space"
                  )
-                ((= v1-3 (mc-status-code internal-error))
+                ((= v1-3 4)
                  "internal-error"
                  )
-                ((= v1-3 (mc-status-code no-memory))
+                ((= v1-3 8)
                  "no-memory"
                  )
-                ((= v1-3 (mc-status-code bad-handle))
+                ((= v1-3 2)
                  "bad-handle"
                  )
-                ((= v1-3 (mc-status-code busy))
+                ((zero? v1-3)
                  "busy"
                  )
-                ((= v1-3 (mc-status-code write-error))
+                ((= v1-3 5)
                  "write-error"
                  )
-                ((= v1-3 (mc-status-code read-error))
+                ((= v1-3 6)
                  "read-error"
                  )
-                ((= v1-3 (mc-status-code no-card))
+                ((= v1-3 9)
                  "no-card"
                  )
-                ((= v1-3 (mc-status-code no-format))
+                ((= v1-3 11)
                  "no-format"
                  )
-                ((= v1-3 (mc-status-code ok))
+                ((= v1-3 1)
                  "ok"
                  )
-                ((= v1-3 (mc-status-code no-process))
+                ((= v1-3 16)
                  "no-process"
                  )
-                ((= v1-3 (mc-status-code no-auto-save))
+                ((= v1-3 17)
                  "no-auto-save"
                  )
-                ((= v1-3 (mc-status-code no-file))
+                ((= v1-3 12)
                  "no-file"
                  )
-                ((= v1-3 (mc-status-code format-failed))
+                ((= v1-3 3)
                  "format-failed"
                  )
-                ((= v1-3 (mc-status-code new-game))
+                ((= v1-3 7)
                  "new-game"
                  )
                 (else
@@ -1932,7 +1944,7 @@
 ;; definition for method 9 of type menu-slider-option
 (defmethod respond-progress ((this menu-slider-option) (arg0 progress) (arg1 symbol))
   (with-pp
-    (when (loaded? *bigmap*)
+    (when (bigmap-method-11 *bigmap*)
       (let ((s5-0 (&+ (the-as (pointer float) *setting-control*) (-> this setting-offset)))
             (s3-0 #f)
             )
@@ -1989,7 +2001,7 @@
 
 ;; definition for method 9 of type menu-stereo-mode-sound-option
 (defmethod respond-progress ((this menu-stereo-mode-sound-option) (arg0 progress) (arg1 symbol))
-  (when (loaded? *bigmap*)
+  (when (bigmap-method-11 *bigmap*)
     (let ((a0-2 (-> *setting-control* user-default stereo-mode))
           (v1-4 #f)
           )
@@ -2270,7 +2282,7 @@
     (set-next-state arg0 a1-3 0)
     )
   (set! (-> arg0 selected-option) #f)
-  (when (loaded? *bigmap*)
+  (when (bigmap-method-11 *bigmap*)
     (cond
       ((cpad-pressed? 0 triangle)
        )
@@ -3084,7 +3096,7 @@
 
 ;; definition for method 9 of type menu-bigmap-option
 (defmethod respond-progress ((this menu-bigmap-option) (arg0 progress) (arg1 symbol))
-  (handle-cpad-input *bigmap*)
+  ((method-of-object *bigmap* bigmap-method-13))
   (logclear! (-> *cpad-list* cpads 0 button0-abs 0) (pad-buttons confirm))
   (logclear! (-> *cpad-list* cpads 0 button0-rel 0) (pad-buttons confirm))
   0
@@ -4143,7 +4155,10 @@
     process
     (lambda :behavior process
       ((arg0 int))
-      (suspend-for (seconds 2.5)
+      (let ((s5-0 (current-time)))
+        (until (time-elapsed? s5-0 (seconds 2.5))
+          (suspend)
+          )
         )
       (while (or (not (handle-command-list *gui-control* (gui-channel alert) (the-as gui-connection #f)))
                  (= (status-of-level-and-borrows *level* 'title #f) 'active)
@@ -4239,7 +4254,3 @@
     )
   0
   )
-
-
-
-

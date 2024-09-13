@@ -1782,7 +1782,11 @@
   :virtual #t
   :enter (behavior ()
     (send-event (handle->process (-> self hud-damage)) 'hide-and-die)
-    (call-parent-state-handler enter)
+    (let ((t9-2 (-> (find-parent-state) enter)))
+      (if t9-2
+          (t9-2)
+          )
+      )
     )
   )
 

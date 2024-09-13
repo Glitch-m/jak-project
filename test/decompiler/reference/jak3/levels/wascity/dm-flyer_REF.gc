@@ -213,7 +213,11 @@
       )
     )
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (when (-> self minimap)
       (logior! (-> self minimap flags) (minimap-flag fade-out))
       (set! (-> self minimap) #f)
@@ -292,7 +296,11 @@
 (defstate dissipate (dm-flyer-shot)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (when (-> self minimap)
       (logior! (-> self minimap flags) (minimap-flag fade-out))
       (set! (-> self minimap) #f)

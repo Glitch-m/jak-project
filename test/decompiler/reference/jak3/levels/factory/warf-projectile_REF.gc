@@ -720,7 +720,11 @@
         )
       (process-spawn warf-explosion-sphere gp-0 :name "warf-explosion-sphere" :to self)
       )
-    (call-parent-state-handler enter)
+    (let ((t9-8 (-> (find-parent-state) enter)))
+      (if t9-8
+          (t9-8)
+          )
+      )
     )
   :code (behavior ()
     (while (< (-> self hit-pos w) 245760.0)
@@ -1647,3 +1651,7 @@
   0
   (none)
   )
+
+
+
+

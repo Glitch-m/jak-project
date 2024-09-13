@@ -360,7 +360,11 @@
 (defstate ambush (roboguard-level)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (logand! (-> self flags) -9)
     (logior! (-> self flags) 4)
     (logior! (-> self nav flags) (nav-control-flag output-sphere-hash))
@@ -421,7 +425,11 @@
 (defstate idle (roboguard-level)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (roboguard-level-method-185 self (the-as symbol 0))
     )
   :code (behavior ()
@@ -488,7 +496,11 @@
 (defstate stare (roboguard-level)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (roboguard-level-method-185 self (the-as symbol 0))
     )
   :code (behavior ()
@@ -753,7 +765,11 @@
 (defstate die (roboguard-level)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (roboguard-level-method-185 self (the-as symbol 0))
     )
   :code (behavior ()

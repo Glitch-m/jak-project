@@ -259,7 +259,11 @@
       (suspend)
       )
     #f
-    (call-parent-state-handler code)
+    (let ((t9-29 (-> (find-parent-state) code)))
+      (if t9-29
+          ((the-as (function none) t9-29))
+          )
+      )
     )
   )
 
@@ -269,7 +273,11 @@
   :code (behavior ()
     (remove-setting! 'pilot-exit)
     (set-setting! 'pilot #f 0.0 0)
-    (call-parent-state-handler code)
+    (let ((t9-3 (-> (find-parent-state) code)))
+      (if t9-3
+          ((the-as (function none) t9-3))
+          )
+      )
     )
   )
 
@@ -328,9 +336,16 @@
   :code (behavior ()
     (send-event *target* 'end-mode 'pilot)
     (send-event (handle->process (-> self player-vehicle)) 'sled-disable)
-    (suspend-for (seconds 2)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 2))
+        (suspend)
+        )
       )
-    (call-parent-state-handler code)
+    (let ((t9-3 (-> (find-parent-state) code)))
+      (if t9-3
+          ((the-as (function none) t9-3))
+          )
+      )
     )
   )
 
@@ -367,3 +382,7 @@
   0
   (none)
   )
+
+
+
+
