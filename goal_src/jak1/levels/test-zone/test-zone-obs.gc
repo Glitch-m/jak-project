@@ -1,5 +1,6 @@
 ;;-*-Lisp-*-
 (in-package goal)
+
 (deftype test-actor (process-drawable)
   ((root       collide-shape-moving :override)
    (birth-time time-frame)

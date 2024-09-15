@@ -769,7 +769,11 @@
     )
   :code (behavior ()
     (logclear! (-> self flags) (robotank-flags roflags-2))
-    (suspend-for (seconds 0.1))
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 0.1))
+        (suspend)
+        )
+      )
     (logior! (-> self flags) (robotank-flags roflags-2))
     (sleep-code)
     )
@@ -897,7 +901,11 @@
     (remove-setting! 'process-mask)
     (remove-setting! 'target-height)
     (send-event (handle->process (-> self turret)) 'die)
-    (suspend-for (seconds 2))
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 2))
+        (suspend)
+        )
+      )
     (while (-> self child)
       (suspend)
       )
@@ -906,37 +914,36 @@
   )
 
 (defmethod deactivate ((this fort-robotank))
-  "Make a process dead, clean it up, remove it from the active pool, and return to dead pool."
   (stop! (-> this idle-sound))
   (stop! (-> this barrel-sound))
   ((method-of-type process-drawable deactivate) this)
   (none)
   )
 
-(defmethod relocate ((this fort-robotank) (offset int))
+(defmethod relocate ((this fort-robotank) (arg0 int))
   (if (nonzero? (-> this barrel-part))
-      (&+! (-> this barrel-part) offset)
+      (&+! (-> this barrel-part) arg0)
       )
   (if (nonzero? (-> this roller-jmod))
-      (&+! (-> this roller-jmod) offset)
+      (&+! (-> this roller-jmod) arg0)
       )
   (if (nonzero? (-> this vibe-jmod))
-      (&+! (-> this vibe-jmod) offset)
+      (&+! (-> this vibe-jmod) arg0)
       )
   (if (nonzero? (-> this idle-sound))
-      (&+! (-> this idle-sound) offset)
+      (&+! (-> this idle-sound) arg0)
       )
   (if (nonzero? (-> this barrel-sound))
-      (&+! (-> this barrel-sound) offset)
+      (&+! (-> this barrel-sound) arg0)
       )
   (let ((v1-20 (-> this path-info)))
     (when (nonzero? v1-20)
       (dotimes (a0-2 (-> this path-count))
         (if (nonzero? (-> v1-20 data a0-2 path))
-            (&+! (-> v1-20 data a0-2 path) offset)
+            (&+! (-> v1-20 data a0-2 path) arg0)
             )
         )
-      (&+! (-> this path-info) offset)
+      (&+! (-> this path-info) arg0)
       )
     )
   (dotimes (v1-24 2)
@@ -954,24 +961,24 @@
                       joint-mod
                       (-> (the-as (pointer uint32) (&+ (&+ (the-as (pointer uint32) this) (* 144 v1-24)) (* a0-4 16))) 55)
                       )
-                    offset
+                    arg0
                     )
                   )
                 )
           )
       )
     )
-  (call-parent-method this offset)
+  (call-parent-method this arg0)
   )
 
 ;; WARN: Return type mismatch object vs none.
 (defmethod init-from-entity! ((this fort-robotank) (arg0 entity-actor))
   "Typically the method that does the initial setup on the process, potentially using the [[entity-actor]] provided as part of that.
-   This commonly includes things such as:
-   - stack size
-   - collision information
-   - loading the skeleton group / bones
-   - sounds"
+This commonly includes things such as:
+- stack size
+- collision information
+- loading the skeleton group / bones
+- sounds"
   (let ((s4-0 (new 'process 'collide-shape-moving this (collide-list-enum usually-hit-by-player))))
     (set! (-> s4-0 dynam) (copy *standard-dynamics* 'process))
     (set! (-> s4-0 reaction) cshape-reaction-default)

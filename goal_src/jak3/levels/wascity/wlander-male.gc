@@ -232,7 +232,11 @@
 (defstate knocked-recover (wlander)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (nav-enemy-method-184 self)
     (let ((a0-2 (-> self nav state))
           (v1-5 *null-vector*)

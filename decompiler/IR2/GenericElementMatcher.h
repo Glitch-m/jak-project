@@ -69,7 +69,6 @@ class Matcher {
                               const Matcher& false_case);
   static Matcher if_no_else(const Matcher& condition, const Matcher& true_case);
   static Matcher while_loop(const Matcher& condition, const Matcher& body);
-  static Matcher until_loop(const Matcher& condition, const Matcher& body);
   static Matcher any_constant_token(int match_id = -1);
   static Matcher constant_token(const std::string& name);
   static Matcher or_expression(const std::vector<Matcher>& elts);
@@ -101,7 +100,6 @@ class Matcher {
     IF_WITH_ELSE,
     IF_NO_ELSE,
     WHILE_LOOP,
-    UNTIL_LOOP,
     ANY_CONSTANT_TOKEN,
     CONSTANT_TOKEN,
     SC_OR,

@@ -522,11 +522,19 @@
 (defstate pickup-nukes (ctyport-attack-manager-bbush)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (set! (-> self countdown-timer) (the-as handle (current-time)))
     )
   :trans (behavior ()
-    (call-parent-state-handler trans)
+    (let ((t9-1 (-> (find-parent-state) trans)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (if (< (vector-vector-xz-distance (target-pos 0) *port-attack-bbush-fail-sphere*) *port-attack-bbush-fail-radius*)
         (send-event self 'fail)
         )
@@ -626,3 +634,7 @@
     (sleep-code)
     )
   )
+
+
+
+

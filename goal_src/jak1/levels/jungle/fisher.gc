@@ -15,7 +15,6 @@
    (max-caught int32)
    (max-missed int32)))
 
-
 (define *FISHER-bank*
   (new 'static 'fisher-bank :width (meters 3.3) :net-radius (meters 0.7) :max-caught #xc8 :max-missed 20))
 
@@ -148,7 +147,6 @@
    (deadly-percent  float)
    (powerup-percent float))
   :allow-misaligned)
-
 
 (define *fisher-params*
   (new 'static
@@ -698,7 +696,6 @@
    fisher-done
    fisher-playing))
 
-
 (deftype fisher-fish (process-drawable)
   ((dir    vector :inline)
    (offset float)
@@ -710,7 +707,6 @@
    fisher-fish-caught
    fisher-fish-die
    fisher-fish-fall))
-
 
 (defskelgroup *catch-fisha-sg*
   catch-fisha
@@ -1088,7 +1084,7 @@
                    (-> gp-2 user-uint8 6)))
          (process-spawn-function process
            (lambda :behavior process ()
-             (suspend-for (seconds 0.1))
+             (let ((gp-0 (current-time))) (until (time-elapsed? gp-0 (seconds 0.1)) (suspend)))
              (ambient-hint-spawn "st-lose" (the-as vector #f) *entity-pool* 'stinger)
              (none)))
          (send-event *target* 'lose))))
@@ -1404,13 +1400,13 @@
           (launch-particles (-> *part-id-table* 828) gp-0)
           (launch-particles (-> *part-id-table* 2013) gp-0)
           (fisher-fish-water gp-0 (+ 32768.0 (vector-y-angle (-> self node-list data 80 bone transform vector 1))))))
-      (call-parent-state-handler trans)))
+      (let ((t9-14 (-> (find-parent-state) trans))) (if t9-14 (t9-14)))))
 
 (defstate idle (fisher)
   :virtual #t
   :trans
     (behavior ()
-      (call-parent-state-handler trans)
+      (let ((t9-1 (-> (find-parent-state) trans))) (if t9-1 (t9-1)))
       (when (task-complete? *game-info* (-> self entity extra perm task))
         (when (nonzero? (-> *cpad-list* cpads 0 button0-rel 0))
           (let ((v1-9 (-> self cheat-temp)))
