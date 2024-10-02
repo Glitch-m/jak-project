@@ -4369,7 +4369,10 @@
              ,(lambda ()
                 (let ((v1-1 (process-spawn-function process (lambda ()
                                                               (set-master-mode 'game)
-                                                              (suspend-for (seconds 0.3)
+                                                              (let ((gp-0 (current-time)))
+                                                                (until (time-elapsed? gp-0 (seconds 0.3))
+                                                                  (suspend)
+                                                                  )
                                                                 )
                                                               (until #f
                                                                 (format *stdcon* "press x clear map, press circle cancel~%")

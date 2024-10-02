@@ -4588,7 +4588,11 @@
 (defstate die (bt-pickup)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (dotimes (gp-0 2)
       (send-event (handle->process (-> self pickup-barrels gp-0)) 'die)
       )

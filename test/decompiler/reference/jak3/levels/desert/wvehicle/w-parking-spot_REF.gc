@@ -272,7 +272,10 @@
         (w-parking-spot-method-23 self)
         )
     (until #f
-      (suspend-for (seconds 0.25)
+      (let ((gp-0 (current-time)))
+        (until (time-elapsed? gp-0 (seconds 0.25))
+          (suspend)
+          )
         )
       (w-parking-spot-method-21 self)
       (when (-> self should-spawn?)

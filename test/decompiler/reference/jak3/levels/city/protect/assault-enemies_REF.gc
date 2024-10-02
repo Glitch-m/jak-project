@@ -309,7 +309,11 @@
 (defstate knocked-recover (assault-citizen-norm)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (logclear! (-> self enemy-flags) (enemy-flag vulnerable))
     (if (< (vector-vector-xz-distance (-> self root trans) (-> self center-pos)) 16384.0)
         (go-virtual cower-ground)
@@ -480,7 +484,11 @@
 (defstate cower-ground (assault-citizen-norm)
   :virtual #t
   :trans (behavior ()
-    (call-parent-state-handler trans)
+    (let ((t9-1 (-> (find-parent-state) trans)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (if (enemy-method-109 self)
         (go-virtual die)
         )
@@ -909,7 +917,10 @@
 (defstate tracking (assault-cleanup)
   :virtual #t
   :code (behavior ()
-    (suspend-for (seconds 5)
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 5))
+        (suspend)
+        )
       )
     (set-time! (-> self offscreen-time))
     (until #f
@@ -1561,7 +1572,11 @@
           )
         )
       )
-    (call-parent-state-handler enter)
+    (let ((t9-11 (-> (find-parent-state) enter)))
+      (if t9-11
+          (t9-11)
+          )
+      )
     )
   )
 
@@ -2161,7 +2176,11 @@
 (defstate drop-bombs (assault-bombbot)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (set! (-> self drop-num) (the-as uint 3))
     )
   )
@@ -2193,7 +2212,11 @@
     (set! (-> self next-node) (the-as int (-> self current-node)))
     (set-time! (-> self state-time))
     (set-time! (-> self stop-shoot))
-    (call-parent-state-handler enter)
+    (let ((t9-3 (-> (find-parent-state) enter)))
+      (if t9-3
+          (t9-3)
+          )
+      )
     )
   :exit (behavior ()
     (remove-attacker *cty-attack-controller* (-> self attacker-info))

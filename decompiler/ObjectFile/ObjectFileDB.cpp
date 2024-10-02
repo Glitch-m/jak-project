@@ -231,11 +231,10 @@ ObjectFileDB::ObjectFileDB(const std::vector<fs::path>& _dgos,
       StrFileReader reader(obj, version());
       // name from the file name
       std::string base_name = obj_filename_to_name(obj.string());
-      for (int i = 0; i < reader.chunk_count(); i++) {
-        auto name = reader.get_chunk_texture_name(i);
-        add_obj_from_dgo(name, name, reader.get_chunk(i).data(), reader.get_chunk(i).size(),
-                         "TEXSPOOL", config, name);
-      }
+      ASSERT(reader.chunk_count() == 1);
+      auto name = reader.get_texture_name();
+      add_obj_from_dgo(name, name, reader.get_chunk(0).data(), reader.get_chunk(0).size(),
+                       "TEXSPOOL", config, name);
     }
   }
 
