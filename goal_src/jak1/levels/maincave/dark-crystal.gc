@@ -25,7 +25,6 @@
    dark-crystal-idle
    dark-crystal-spawn-fuel-cell))
 
-
 (defskelgroup *dark-crystal-sg*
   dark-crystal
   dark-crystal-lod0-jg
@@ -460,7 +459,7 @@
                        (-> self root trans)
                        :to
                        *entity-pool*)
-        (suspend-for (seconds 0.25))
+        (let ((s5-4 (current-time))) (until (time-elapsed? s5-4 (seconds 0.25)) (suspend)))
         (if gp-1 (go dark-crystal-spawn-fuel-cell)))
       (cleanup-for-death self)
       (until (not (-> self child))

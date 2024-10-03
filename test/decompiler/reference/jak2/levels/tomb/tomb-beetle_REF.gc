@@ -779,7 +779,10 @@
         (-> gp-1 ppointer)
         )
       )
-    (suspend-for (seconds 2)
+    (let ((gp-2 (current-time)))
+      (until (time-elapsed? gp-2 (seconds 2))
+        (suspend)
+        )
       )
     )
   :post nav-enemy-simple-post

@@ -30,10 +30,10 @@
 
 (defmethod move-between-points ((this com-elevator) (arg0 vector) (arg1 float) (arg2 float))
   "Move between two points on the elevator's path
-   @param vec TODO not sure
-   @param point-a The first point fetched from the elevator's path
-   @param point-b The second point fetched from the path
-   @see [[path-control]] and [[elevator]]"
+@param vec TODO not sure
+@param point-a The first point fetched from the elevator's path
+@param point-b The second point fetched from the path
+@see [[path-control]] and [[elevator]]"
   (let ((s4-0 (get-point-in-path! (-> this path) (new 'stack-no-clear 'vector) arg1 'interp))
         (a0-3 (get-point-in-path! (-> this path) (new 'stack-no-clear 'vector) arg2 'interp))
         (v1-3 (-> this root trans))
@@ -93,7 +93,11 @@
 (defstate dormant (com-elevator)
   :virtual #t
   :enter (behavior ()
-    (call-parent-state-handler enter)
+    (let ((t9-1 (-> (find-parent-state) enter)))
+      (if t9-1
+          (t9-1)
+          )
+      )
     (process-entity-status! self (entity-perm-status subtask-complete) #t)
     )
   )
@@ -123,7 +127,11 @@
     (remove-setting! 'allow-look-around)
     )
   :code (behavior ()
-    (suspend-for (seconds 1))
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 1))
+        (suspend)
+        )
+      )
     (sound-play "com-elevator-s")
     (logior! (-> self elevator-status) (elevator-status waiting-to-ascend))
     (until #f
@@ -166,7 +174,6 @@
   )
 
 (defmethod deactivate ((this com-elevator))
-  "Make a process dead, clean it up, remove it from the active pool, and return to dead pool."
   (sound-stop (-> this sound-id))
   (call-parent-method this)
   (none)
@@ -175,7 +182,7 @@
 ;; WARN: Return type mismatch sound-id vs none.
 (defmethod init-plat! ((this com-elevator))
   "Does any necessary initial platform setup.
-   For example for an elevator pre-compute the distance between the first and last points (both ways) and clear the sound."
+For example for an elevator pre-compute the distance between the first and last points (both ways) and clear the sound."
   (dotimes (s5-0 (-> this path curve num-cverts))
     (let ((a1-1 (res-lump-struct (-> this entity) 'string-startup-vector structure :time (the float s5-0))))
       (cond
@@ -265,7 +272,11 @@
         )
     )
   :code (behavior ()
-    (suspend-for (seconds 1))
+    (let ((gp-0 (current-time)))
+      (until (time-elapsed? gp-0 (seconds 1))
+        (suspend)
+        )
+      )
     (logior! (-> self elevator-status) (elevator-status waiting-to-ascend))
     (until #f
       (sound-play "tmb-elevator-lp" :id (-> self sound-id))
@@ -292,7 +303,6 @@
   )
 
 (defmethod deactivate ((this tomb-trans-elevator))
-  "Make a process dead, clean it up, remove it from the active pool, and return to dead pool."
   (sound-stop (-> this sound-id))
   (call-parent-method this)
   (none)
@@ -301,7 +311,7 @@
 ;; WARN: Return type mismatch sound-id vs none.
 (defmethod init-plat! ((this tomb-trans-elevator))
   "Does any necessary initial platform setup.
-   For example for an elevator pre-compute the distance between the first and last points (both ways) and clear the sound."
+For example for an elevator pre-compute the distance between the first and last points (both ways) and clear the sound."
   (call-parent-method this)
   (set! (-> this sound-id) (new-sound-id))
   (none)

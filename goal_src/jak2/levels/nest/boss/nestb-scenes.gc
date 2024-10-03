@@ -20,9 +20,17 @@
       (set! (-> a1-0 message) 'test-pickup)
       (set! (-> a1-0 param 0) (the-as uint 7))
       (let ((f30-0 (send-event-function *target* a1-0)))
-        (suspend-for (seconds 0.1))
+        (let ((gp-0 (current-time)))
+          (until (time-elapsed? gp-0 (seconds 0.1))
+            (suspend)
+            )
+          )
         (send-event *target* 'change-mode 'darkjak #f (darkjak-stage no-anim))
-        (suspend-for (seconds 0.1))
+        (let ((gp-1 (current-time)))
+          (until (time-elapsed? gp-1 (seconds 0.1))
+            (suspend)
+            )
+          )
         (send-event *target* 'get-pickup (pickup-type eco-pill-dark) f30-0)
         )
       )
@@ -1630,11 +1638,11 @@
 ;; WARN: Return type mismatch object vs none.
 (defmethod init-from-entity! ((this nest-gun-parts) (arg0 entity-actor))
   "Typically the method that does the initial setup on the process, potentially using the [[entity-actor]] provided as part of that.
-   This commonly includes things such as:
-   - stack size
-   - collision information
-   - loading the skeleton group / bones
-   - sounds"
+This commonly includes things such as:
+- stack size
+- collision information
+- loading the skeleton group / bones
+- sounds"
   (set! (-> this root) (new 'process 'trsqv))
   (process-drawable-from-entity! this arg0)
   (initialize-skeleton
@@ -1679,11 +1687,11 @@
 ;; WARN: Return type mismatch object vs none.
 (defmethod init-from-entity! ((this nest-unbroken-rocks) (arg0 entity-actor))
   "Typically the method that does the initial setup on the process, potentially using the [[entity-actor]] provided as part of that.
-   This commonly includes things such as:
-   - stack size
-   - collision information
-   - loading the skeleton group / bones
-   - sounds"
+This commonly includes things such as:
+- stack size
+- collision information
+- loading the skeleton group / bones
+- sounds"
   (set! (-> this root) (new 'process 'trsqv))
   (process-drawable-from-entity! this arg0)
   (initialize-skeleton

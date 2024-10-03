@@ -637,8 +637,11 @@
              (process-spawn-function
                process
                (lambda ((arg0 process-drawable))
-                 (suspend-for (seconds 0.6)
-                   (send-event arg0 'effect 'eco-blue)
+                 (let ((s5-0 (current-time)))
+                   (until (time-elapsed? s5-0 (seconds 0.6))
+                     (send-event arg0 'effect 'eco-blue)
+                     (suspend)
+                     )
                    )
                  (none)
                  )

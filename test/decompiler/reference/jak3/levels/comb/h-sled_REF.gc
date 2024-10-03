@@ -2040,7 +2040,11 @@
   :virtual #t
   :enter (behavior ()
     (set! (-> self health-hud) (process->handle (hud-sled-health-spawn self)))
-    (call-parent-state-handler enter)
+    (let ((t9-2 (-> (find-parent-state) enter)))
+      (if t9-2
+          (t9-2)
+          )
+      )
     )
   :exit (behavior ()
     (let ((t9-1 (-> (find-parent-state) exit)))

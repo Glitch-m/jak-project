@@ -924,7 +924,10 @@
       (ja :num! (seek!))
       )
     (logior! (-> self draw status) (draw-control-status no-draw))
-    (suspend-for (seconds 0.5)
+    (let ((gp-2 (current-time)))
+      (until (time-elapsed? gp-2 (seconds 0.5))
+        (suspend)
+        )
       )
     (task-node-close! (game-task-node city-destroy-darkeco-resolution) 'event)
     (sleep-code)
@@ -978,7 +981,10 @@
       (label cfg-9)
       (ja-channel-push! 1 (seconds 0.5))
       (ja :group! mhcity-dark-eco-door-idle-ja :num! (seek! 15.0) :frame-num 15.0)
-      (suspend-for (seconds 0.5)
+      (let ((gp-0 (current-time)))
+        (until (time-elapsed? gp-0 (seconds 0.5))
+          (suspend)
+          )
         )
       (go-virtual cracked)
       )
@@ -1312,7 +1318,10 @@
         (part-tracker-spawn part-tracker :to *entity-pool* :group (-> *part-group-id-table* 326))
         )
       )
-    (suspend-for (seconds 0.1)
+    (let ((gp-3 (current-time)))
+      (until (time-elapsed? gp-3 (seconds 0.1))
+        (suspend)
+        )
       )
     (process-entity-status! self (entity-perm-status dead) #t)
     )
@@ -2443,3 +2452,7 @@
     )
   (go (method-of-object this idle))
   )
+
+
+
+
